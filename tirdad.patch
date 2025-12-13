@@ -1,0 +1,86 @@
+diff --git a/net/core/secure_seq.c b/net/core/secure_seq.c
+index 9a3965680..86979ce11 100644
+--- a/net/core/secure_seq.c
++++ b/net/core/secure_seq.c
+@@ -13,6 +13,7 @@
+ #include <linux/string.h>
+ #include <linux/net.h>
+ #include <linux/siphash.h>
++#include <linux/random.h>
+ #include <net/secure_seq.h>
+ 
+ #if IS_ENABLED(CONFIG_IPV6) || IS_ENABLED(CONFIG_INET)
+@@ -35,23 +36,6 @@ static __always_inline void ts_secret_init(void)
+ }
+ #endif
+ 
+-#ifdef CONFIG_INET
+-static u32 seq_scale(u32 seq)
+-{
+-	/*
+-	 *	As close as possible to RFC 793, which
+-	 *	suggests using a 250 kHz clock.
+-	 *	Further reading shows this assumes 2 Mb/s networks.
+-	 *	For 10 Mb/s Ethernet, a 1 MHz clock is appropriate.
+-	 *	For 10 Gb/s Ethernet, a 1 GHz clock should be ok, but
+-	 *	we also need to limit the resolution so that the u32 seq
+-	 *	overlaps less than one time per MSL (2 minutes).
+-	 *	Choosing a clock of 64 ns period is OK. (period of 274 s)
+-	 */
+-	return seq + (ktime_get_real_ns() >> 6);
+-}
+-#endif
+-
+ #if IS_ENABLED(CONFIG_IPV6)
+ u32 secure_tcpv6_ts_off(const struct net *net,
+ 			const __be32 *saddr, const __be32 *daddr)
+@@ -73,26 +57,12 @@ u32 secure_tcpv6_ts_off(const struct net *net,
+ }
+ EXPORT_IPV6_MOD(secure_tcpv6_ts_off);
+ 
+-u32 secure_tcpv6_seq(const __be32 *saddr, const __be32 *daddr,
++__visible noinline u32 secure_tcpv6_seq(const __be32 *saddr, const __be32 *daddr,
+ 		     __be16 sport, __be16 dport)
+ {
+-	const struct {
+-		struct in6_addr saddr;
+-		struct in6_addr daddr;
+-		__be16 sport;
+-		__be16 dport;
+-	} __aligned(SIPHASH_ALIGNMENT) combined = {
+-		.saddr = *(struct in6_addr *)saddr,
+-		.daddr = *(struct in6_addr *)daddr,
+-		.sport = sport,
+-		.dport = dport
+-	};
+ 	u32 hash;
+-
+-	net_secret_init();
+-	hash = siphash(&combined, offsetofend(typeof(combined), dport),
+-		       &net_secret);
+-	return seq_scale(hash);
++	get_random_bytes(((char *)&hash), sizeof(u32));
++	return hash;
+ }
+ EXPORT_SYMBOL(secure_tcpv6_seq);
+ 
+@@ -133,16 +103,12 @@ u32 secure_tcp_ts_off(const struct net *net, __be32 saddr, __be32 daddr)
+  * it would be easy enough to have the former function use siphash_4u32, passing
+  * the arguments as separate u32.
+  */
+-u32 secure_tcp_seq(__be32 saddr, __be32 daddr,
++__visible noinline u32 secure_tcp_seq(__be32 saddr, __be32 daddr,
+ 		   __be16 sport, __be16 dport)
+ {
+ 	u32 hash;
+-
+-	net_secret_init();
+-	hash = siphash_3u32((__force u32)saddr, (__force u32)daddr,
+-			    (__force u32)sport << 16 | (__force u32)dport,
+-			    &net_secret);
+-	return seq_scale(hash);
++	get_random_bytes(((char *)&hash), sizeof(u32));
++	return hash;
+ }
+ EXPORT_SYMBOL_GPL(secure_tcp_seq);
+ 
