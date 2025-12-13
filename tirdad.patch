@@ -39,7 +39,7 @@ index 9a3965680..86979ce11 100644
  EXPORT_IPV6_MOD(secure_tcpv6_ts_off);
  
 -u32 secure_tcpv6_seq(const __be32 *saddr, const __be32 *daddr,
-+__visible noinline u32 secure_tcpv6_seq(const __be32 *saddr, const __be32 *daddr,
++noinline u32 secure_tcpv6_seq(const __be32 *saddr, const __be32 *daddr,
  		     __be16 sport, __be16 dport)
  {
 -	const struct {
@@ -69,7 +69,7 @@ index 9a3965680..86979ce11 100644
   * the arguments as separate u32.
   */
 -u32 secure_tcp_seq(__be32 saddr, __be32 daddr,
-+__visible noinline u32 secure_tcp_seq(__be32 saddr, __be32 daddr,
++noinline u32 secure_tcp_seq(__be32 saddr, __be32 daddr,
  		   __be16 sport, __be16 dport)
  {
  	u32 hash;
