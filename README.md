@@ -1,7 +1,7 @@
 # tirdad-patch
 A small patch to take the functionality of the "tirdad kernel module" from Kicksecure / Whonix and write it into the kernel TCP stack
 
-The tirdad kernel module that Kicksecure / Whonix uses randomizes TCP ISN's to prevent a side channel attack - more can be read on Kicksecure docs or at this link: https://bitguard.wordpress.com/?p=982
+This is the tirdad kernel module that Kicksecure / Whonix uses to randomize TCP ISN's to prevent a side channel attack - more can be read on Kicksecure docs or at this link: https://bitguard.wordpress.com/?p=982. Also thank you to "0xsirus" where I actually originally found the module.
 
 The hardened kernels we run (and will soon release) have live patching turned off for security purposes, thus, I still wanted to be able to include the random ISN capabilities in the "hardened-desktop" kernel, it will not be included in the "hardened-server" kernel, however, you may always pull the source / config and patch it in.
 
