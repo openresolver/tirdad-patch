@@ -1,8 +1,16 @@
 # tirdad-patch
 A small patch to take the functionality of the "tirdad kernel module" from Kicksecure / Whonix and write it into the kernel TCP stack
 
-This is the tirdad kernel module that Kicksecure / Whonix uses to randomize TCP ISN's to prevent a side channel attack - more can be read on Kicksecure docs or at this link: https://bitguard.wordpress.com/?p=982. Also thank you to "0xsirus" where I actually originally found the module.
+# info
+This is the tirdad kernel module that Kicksecure / Whonix uses to randomize TCP ISN's to prevent a side channel attack - more can be read on Kicksecure docs or at this link: https://bitguard.wordpress.com/?p=982. Thank you to "0xsirus" for the original module.
 
-The hardened kernels we run (and will soon release) have live patching turned off for security purposes, thus, I still wanted to be able to include the random ISN capabilities in the "hardened-desktop" kernel, it will not be included in the "hardened-server" kernel, however, you may always pull the source / config and patch it in.
+There are 2 patches in the repo. Please note that this is global and affects both IPv4 and IPv6 TCP ISN generation.
 
-This patch does work but it is not technically formatted properly - I am aware. It was generated with git diff and will work with "patch -p1" or "git apply". As of now, it totally removes the normal kernel ISN generation and replaces it with "get_random_bytes". Eventually I plan to add in the original TCP functionality and the Tirdad-type functionality and use a sysctl setting so the user can choose which ISN generation method they prefer to use if they run the hardened-desktop kernel.
+# How to use:
+"0001-net..." is a patch to add a sysctl setting to toggle between the upstream TCP ISN generation and totally random ISN generation. The sysctl setting is `net.ipv4.tcp_random_isn`. You can set via `sysctl -w net.ipv4.tcp_random_isn=1` to enable totally random ISN generation. In an effort to not break upstream code, the default is set to '0' or 'off'. You can overwrite this behavior by creating a `99-tcp-isn-override.conf` and adding `net.ipv4.tcp_random_isn = 1`
+
+`cd` into your kernel source directory and run `git am 0001-net-ipv4-add-sysctl-to-toggle-TCP-ISN-generation.patch`
+
+"tirdad.patch" is a simple git diff that totally removes the original secure_seq SIPHASH ISN generation from the kernel and replaces with `"get_random_bytes()"`
+
+`cd` into your kernel source directory and run `patch -p1 tirdad.patch` or `git apply tirdad.patch`
