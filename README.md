@@ -14,3 +14,6 @@ There are 2 patches in the repo. Please note that this is global and affects bot
 "tirdad.patch" is a simple git diff that totally removes the original secure_seq SIPHASH ISN generation from the kernel and replaces with `"get_random_bytes()"`
 
 `cd` into your kernel source directory and run `patch -p1 tirdad.patch` or `git apply tirdad.patch`
+
+# TODO
+Change sysctl setting to global instead of halfway between netns and global. Re-evaluate the need to use `noinline` for clang compiled kernels with LTO.
