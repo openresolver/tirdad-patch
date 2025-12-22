@@ -7,7 +7,7 @@ This is the tirdad kernel module that Kicksecure / Whonix uses to randomize TCP 
 There are 2 patches in the repo. Please note that this is global and affects both IPv4 and IPv6 TCP ISN generation.
 
 # How to use (only use one or the other):
-"0001-net..." is a patch to add a sysctl setting to toggle between the upstream TCP ISN generation and totally random ISN generation. The sysctl setting is `net.ipv4.tcp_random_isn`. You can set via `sysctl -w net.ipv4.tcp_random_isn=1` to enable totally random ISN generation. In an effort to not break upstream code, the default is set to '0' or 'off'. You can overwrite this behavior by creating a `/etc/sysctl.d/99-tcp-isn-override.conf` and adding `net.ipv4.tcp_random_isn = 1`
+"0001-net..." is a patch to add a sysctl setting to toggle between the upstream TCP ISN generation and totally random ISN generation. The sysctl setting is `net.ipv4.tcp_random_isn`. You can set via `sysctl -w net.ipv4.tcp_random_isn=1` to enable totally random ISN generation. In an effort to not break upstream code, the default is set to '0' or 'off'. You can override this behavior by creating a `/etc/sysctl.d/99-tcp-isn-override.conf` and adding `net.ipv4.tcp_random_isn = 1`
 
 `cd` into your kernel source directory and run `git am 0001-net-ipv4-add-sysctl-to-toggle-TCP-ISN-generation.patch`
 
@@ -15,5 +15,10 @@ There are 2 patches in the repo. Please note that this is global and affects bot
 
 `cd` into your kernel source directory and run `patch -p1 tirdad.patch` or `git apply tirdad.patch`
 
-# TODO
-Change sysctl setting to global instead of halfway between netns and global. Re-evaluate the need to use `noinline` for clang compiled kernels with LTO.
+# TODO for v3 patch
+-Re-evaluate the need to use `noinline` for clang compiled kernels with LTO
+-Fix minor formatting issues
+-Possibly rename sysctl or make it more clear that it affects both IPv4 and IPv6?
+-Add comment to explain why the setting is global
+-Possible change to avoid unecessary cast in `get_random_bytes()`
+-Evaluate possible change to `get_random_u32`
