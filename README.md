@@ -17,8 +17,13 @@ There are 2 patches in the repo. Please note that this is global and affects bot
 
 # TODO for v3 patch
 -Re-evaluate the need to use `noinline` for clang compiled kernels with LTO
+
 -Fix minor formatting issues
+
 -Possibly rename sysctl or make it more clear that it affects both IPv4 and IPv6?
+
 -Add comment to explain why the setting is global
+
 -Possible change to avoid unecessary cast in `get_random_bytes()`
+
 -Evaluate possible change to `get_random_u32`
