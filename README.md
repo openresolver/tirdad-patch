@@ -11,7 +11,7 @@ There are 2 patches in the repo. Please note that this is global and affects bot
 
 `cd` into your kernel source directory and run `git am 0001-net-ipv4-add-sysctl-to-toggle-TCP-ISN-generation.patch`
 
-"tirdad.patch" is a simple git diff that totally removes the original secure_seq SIPHASH ISN generation from the kernel and replaces with `"get_random_bytes()"`
+"tirdad.patch" is a simple git diff that totally removes the original secure_seq Sip Hash ISN generation from the kernel and replaces with `"get_random_bytes()"`
 
 `cd` into your kernel source directory and run `patch -p1 tirdad.patch` or `git apply tirdad.patch`
 
