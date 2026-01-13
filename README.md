@@ -16,8 +16,6 @@ There are 2 patches in the repo. Please note that this is global and affects bot
 `cd` into your kernel source directory and run `patch -p1 tirdad.patch` or `git apply tirdad.patch`
 
 # TODO for v3 patch
--Re-evaluate the need to use `noinline` for clang compiled kernels with LTO
-
 -Fix minor formatting issues
 
 -Possibly rename sysctl or make it more clear that it affects both IPv4 and IPv6?
