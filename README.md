@@ -1,5 +1,6 @@
 # Tirdad-sysctl-patch
 A small patch to take the functionality of the "tirdad kernel module" from Kicksecure / Whonix add it into the kernel source and add a sysctl setting to toggle between normal and random ISN generation
+**Note:** Please use the "0001-net-tcp-add-sysctl-to-toggle-TCP-ISN-randomization-6.18.patch" for kernel releases 6.18 and above as the previous patch will conflict due to a line numbering / ordering issue.
 
 # Info
 This is the tirdad kernel module that Kicksecure / Whonix uses to randomize TCP ISN's to prevent a side channel attack - more can be read on Kicksecure docs or at this link: https://bitguard.wordpress.com/?p=982. Thank you to "0xsirus" for the original module.
