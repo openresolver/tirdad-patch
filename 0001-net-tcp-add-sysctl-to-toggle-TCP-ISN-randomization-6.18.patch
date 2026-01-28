@@ -1,0 +1,113 @@
+From e35e0281ff35806152e5e4d10779f1d11fbf5e32 Mon Sep 17 00:00:00 2001
+From: MWCLabs <info@mwclabs.com>
+Date: Sun, 21 Dec 2025 13:56:54 -0500
+Subject: [PATCH] net: tcp: add sysctl to toggle TCP ISN randomization
+
+Add a global sysctl, net.ipv4.tcp_random_isn, to allow enabling
+fully random TCP Initial Sequence Number (ISN) generation.
+
+When enabled, TCP ISNs are generated using get_random_bytes()
+instead of the existing siphash-based mechanism. This provides
+an optional hardening mode for systems that prefer fully random
+ISNs over deterministic hashing.
+
+The sysctl is global rather than per-network namespace, reflecting
+its role as a system-wide security policy toggle. The default
+behavior remains unchanged, preserving upstream semantics unless
+explicitly enabled by the administrator.
+
+The change updates secure_tcp_seq() and secure_tcpv6_seq() to
+conditionally select the ISN generation method based on the sysctl.
+---
+ net/core/secure_seq.c      | 18 ++++++++++++++++--
+ net/ipv4/sysctl_net_ipv4.c | 10 ++++++++++
+ 2 files changed, 26 insertions(+), 2 deletions(-)
+
+diff --git a/net/core/secure_seq.c b/net/core/secure_seq.c
+index 9a39656804513..67804829a15d5 100644
+--- a/net/core/secure_seq.c
++++ b/net/core/secure_seq.c
+@@ -15,6 +15,9 @@
+ #include <linux/siphash.h>
+ #include <net/secure_seq.h>
+ 
++/* Global toggle for random TCP ISN generation; default off */
++int sysctl_tcp_random_isn __read_mostly;
++
+ #if IS_ENABLED(CONFIG_IPV6) || IS_ENABLED(CONFIG_INET)
+ #include <linux/in6.h>
+ #include <net/tcp.h>
+@@ -73,7 +76,7 @@ u32 secure_tcpv6_ts_off(const struct net *net,
+ }
+ EXPORT_IPV6_MOD(secure_tcpv6_ts_off);
+ 
+-u32 secure_tcpv6_seq(const __be32 *saddr, const __be32 *daddr,
++noinline u32 secure_tcpv6_seq(const __be32 *saddr, const __be32 *daddr,
+ 		     __be16 sport, __be16 dport)
+ {
+ 	const struct {
+@@ -89,9 +92,15 @@ u32 secure_tcpv6_seq(const __be32 *saddr, const __be32 *daddr,
+ 	};
+ 	u32 hash;
+ 
++	if (READ_ONCE(sysctl_tcp_random_isn)) {
++		get_random_bytes(((char *)&hash), sizeof(u32));
++		return hash;
++	}
++
+ 	net_secret_init();
+ 	hash = siphash(&combined, offsetofend(typeof(combined), dport),
+ 		       &net_secret);
++
+ 	return seq_scale(hash);
+ }
+ EXPORT_SYMBOL(secure_tcpv6_seq);
+@@ -133,11 +142,16 @@ u32 secure_tcp_ts_off(const struct net *net, __be32 saddr, __be32 daddr)
+  * it would be easy enough to have the former function use siphash_4u32, passing
+  * the arguments as separate u32.
+  */
+-u32 secure_tcp_seq(__be32 saddr, __be32 daddr,
++noinline u32 secure_tcp_seq(__be32 saddr, __be32 daddr,
+ 		   __be16 sport, __be16 dport)
+ {
+ 	u32 hash;
+ 
++	if (READ_ONCE(sysctl_tcp_random_isn)) {
++	get_random_bytes(((char *)&hash), sizeof(u32));
++	return hash;
++	}
++
+ 	net_secret_init();
+ 	hash = siphash_3u32((__force u32)saddr, (__force u32)daddr,
+ 			    (__force u32)sport << 16 | (__force u32)dport,
+diff --git a/net/ipv4/sysctl_net_ipv4.c b/net/ipv4/sysctl_net_ipv4.c
+index 08f833d4e251c..f5654eee805c6 100644
+--- a/net/ipv4/sysctl_net_ipv4.c
++++ b/net/ipv4/sysctl_net_ipv4.c
+@@ -48,6 +48,7 @@ static int tcp_plb_max_rounds = 31;
+ static int tcp_plb_max_cong_thresh = 256;
+ static unsigned int tcp_tw_reuse_delay_max = TCP_PAWS_MSL * MSEC_PER_SEC;
+ static int tcp_ecn_mode_max = 2;
++extern int sysctl_tcp_random_isn;
+ 
+ /* obsolete */
+ static int sysctl_tcp_low_latency __read_mostly;
+@@ -1621,6 +1622,15 @@ static struct ctl_table ipv4_net_table[] = {
+ 		.extra1		= SYSCTL_ONE_THOUSAND,
+ 		.extra2		= &tcp_rto_max_max,
+ 	},
++	{
++		.procname	= "tcp_random_isn",
++		.data		= &sysctl_tcp_random_isn,
++		.maxlen		= sizeof(int),
++		.mode		= 0644,
++		.proc_handler	= proc_dointvec_minmax,
++		.extra1		= SYSCTL_ZERO,
++		.extra2		= SYSCTL_ONE,
++	},
+ };
+ 
+ static __net_init int ipv4_sysctl_init_net(struct net *net)
+-- 
+2.47.3
+
